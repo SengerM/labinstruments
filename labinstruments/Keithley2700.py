@@ -39,7 +39,7 @@ class Keithley2700(SCPISerialInstrument):
 			raise RuntimeError(f'Could not get the requested number of samples from the instrument. Requested number was n_samples={n_samples} while the number of retrieved samples is {len(data)}. ')
 		return data
 
-def main():
+def example():
 	import numpy
 
 	k = Keithley2700(
@@ -74,6 +74,5 @@ def main():
 	)
 	print(f'Just measured R = {R}')
 
-
 if __name__ == '__main__':
-	main()
+	example()
