@@ -2,13 +2,6 @@ from time import sleep, time
 from Instrument import SCPISerialInstrument
 
 class Agilent33250A(SCPISerialInstrument):
-	# ~ def write(self, cmd:str):
-		# ~ super().write(cmd)
-		# ~ sleep(.3)
-
-	# ~ def read(self):
-		# ~ sleep(.3)
-		# ~ return super().read()
 
 	def check_whether_error(self):
 		msg = self.query_without_checking_errors('SYST:ERR?')
@@ -17,6 +10,8 @@ class Agilent33250A(SCPISerialInstrument):
 
 	def set_shape(self, shape:str):
 		self.write(f'FUNC {shape.upper()}')
+		if shape.lower() == 'user':
+			self.write('FUNC:USER volatile') # From all the arbitrary waveforms, select the one in the volatile memory.
 
 	def set_frequency(self, hertz:float):
 		self.write(f'FREQ {hertz:e}')
@@ -86,8 +81,8 @@ class Agilent33250A(SCPISerialInstrument):
 
 def example():
 	WEIRD_WAVEFORM = [0, .1, 0, .2, 0, .3, 0, .4, 0, .5, 0, .6, 0, .7, 0, .8, 0, .9, 0, 1,.5,.4,.3,.2]
-	POT = [0,1,0]
-	DEPOT = [0,-1,0]
+	POTENTIATION_PULSE = [0,1,0]
+	DEPOTENTIATION_PULSE = [0,-1,0]
 
 	A = Agilent33250A(
 		Serial_kwargs = dict(
@@ -98,17 +93,16 @@ def example():
 		),
 	)
 	print(f'Connected with {A.idn}')
-	A.reset()
+	# ~ A.reset()
 
 	A.set_output('off')
-	A.load_arbitrary_waveform((POT*22+DEPOT*22)*22)
 	A.set_shape('user') # Select arbitrary waveform source.
-	A.write('FUNC:USER volatile') # From all the arbitrary waveforms, select the one just uploaded.
 	A.set_frequency(1e3)
 	A.set_burst('on')
 	A.set_burst_mode('triggered')
+	A.load_arbitrary_waveform(POTENTIATION_PULSE*333 + DEPOTENTIATION_PULSE*333)
 	A.set_burst_n_cycles(2)
-	A.set_amplitude(volts_pp=1)
+	A.set_amplitude(volts_pp=2*1.8)
 	A.set_offset(volts=0)
 	A.write('TRIG:SOURCE BUS') # Select trigger source from software.
 	A.set_output('on')
