@@ -48,15 +48,17 @@ class SCPISerialInstrument:
 
 	def check_whether_error(self):
 		msg = self.query_without_checking_errors('SYST:ERR?')
-		if msg not in {'0,"No error"'}:
+		if msg != '0,"No error"':
 			raise RuntimeError(f'The instrument says: {msg}')
 
 	def clear_errors_buffer(self, timeout:float=1):
 		t_start = time()
 		while True:
-			response = self.query_without_checking_errors('SYST:ERR?')
-			if response == '0,"No error"':
-				break
+			try:
+				self.check_whether_error()
+				return
+			except RuntimeError:
+				continue
 			if time() - t_start > timeout:
 				raise RuntimeError('Timeout trying to clear errors buffer. ')
 
