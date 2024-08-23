@@ -1,5 +1,6 @@
 import serial
 from time import sleep, time
+import logging
 
 class SCPISerialInstrument:
 	def __init__(self, Serial_kwargs:dict, message_termination_instrument_to_PC='\n', message_termination_PC_to_instrument='\n'):
@@ -12,6 +13,7 @@ class SCPISerialInstrument:
 
 	def write_without_checking_errors(self, cmd:str):
 		send_this = cmd + self._message_termination_PC_to_instrument
+		logging.debug(f'Writing {repr(send_this)} into {repr(self.serial_port.name)}')
 		self.serial_port.write(send_this.encode('ASCII'))
 		while self.serial_port.out_waiting > 0: # Wait until we have sent everything to the instrument.
 			sleep(.01)
@@ -22,6 +24,7 @@ class SCPISerialInstrument:
 			.decode('ASCII')
 			.rstrip(self._message_termination_instrument_to_PC)
 		)
+		logging.debug(f'Read {repr(response)} from {repr(self.serial_port.name)}')
 		return response
 
 	def query_without_checking_errors(self, cmd:str):
