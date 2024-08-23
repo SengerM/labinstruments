@@ -11,7 +11,7 @@ class Keithley2700(SCPISerialInstrument):
 		value_returned_by_the_instrument = float(value_returned_by_the_instrument)
 		return value_returned_by_the_instrument
 
-	def measure_N_samples_using_the_buffer(self, measure_kwargs:dict, n_samples:int, timeout=None):
+	def measure_N_samples_using_the_buffer(self, measure_kwargs:dict, n_samples:int, timeout=None)->list:
 		self.set_what_and_range_and_resolution(**measure_kwargs)
 		self.write('INIT:CONTINUOUS off') # Stop the DMM.
 		self.write('TRAC:CLEAR') # Clear the buffer.
