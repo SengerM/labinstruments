@@ -4,7 +4,7 @@ import logging
 
 class SCPISerialInstrument:
 	"""A class to communicate with any laboratory instrument accepting SCPI commands through the serial port."""
-	def __init__(self, Serial_kwargs:dict, message_termination_instrument_to_PC:str='\n', message_termination_PC_to_instrument:str='\n'):
+	def __init__(self, instrument_manufacturer:str, instrument_model:str, Serial_kwargs:dict, message_termination_instrument_to_PC:str='\n', message_termination_PC_to_instrument:str='\n'):
 		"""
 		Arguments
 		---------
@@ -21,6 +21,10 @@ class SCPISerialInstrument:
 		self.serial_port = serial.Serial(**Serial_kwargs) # Open serial connection.
 
 		self.clear_errors_buffer()
+
+		# Check that we are connected with the correct instrument:
+		if any([_.lower() not in self.idn.lower() for _ in {instrument_manufacturer,instrument_model}]):
+			raise RuntimeError(f'Not connected with a {instrument_manufacturer} {instrument_model}, I am connected with: {self.idn}. ')
 
 	def write_without_checking_errors(self, cmd:str):
 		"""Send a message to the instrument.
@@ -78,7 +82,7 @@ class SCPISerialInstrument:
 	def check_whether_error(self):
 		"""Check whether there was an error to be reported from the instrument. If so, this function raises `RuntimeError` and prints the message of the error received from the instrument."""
 		msg = self.query_without_checking_errors('SYST:ERR?')
-		if msg != '0,"No error"':
+		if '"No error"'.lower() not in msg.lower():
 			raise RuntimeError(f'The instrument says: {msg}')
 
 	def clear_errors_buffer(self, timeout:float=1):
