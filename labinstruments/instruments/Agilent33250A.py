@@ -73,13 +73,13 @@ class Agilent33250A(SCPISerialInstrument):
 
 	def configure_arbitrary_waveform(self, samples_in_volt:list[float]):
 		# Compute normalized samples between -1 and 1:
+		maximum_absolute_voltage = [abs(s) for s in samples_in_volt]
+		maximum_absolute_voltage = max(maximum_absolute_voltage)
 		samples = samples_in_volt
-		samples = [(s-min(samples)) for s in samples]
-		samples = [s/max(samples)*2-1 for s in samples]
-		samples = [s/2 for s in samples]
+		samples = [s/maximum_absolute_voltage for s in samples]
 		self.load_arbitrary_waveform_samples(samples)
 		# Now configure offset and amplitude to obtain the desired voltage levels:
-		self.set_offset(volts=(max(samples_in_volt)+min(samples_in_volt))/2/2)
+		self.set_offset(volts=0)
 		self.set_amplitude(volts_pp=max(samples_in_volt)-min(samples_in_volt))
 		self.set_shape('user') # Select arbitrary waveform source.
 
@@ -102,7 +102,7 @@ def example():
 
 	A.set_output('off')
 
-	A.configure_arbitrary_waveform([0,1,2,3,0,-4])
+	A.configure_arbitrary_waveform([0,-1,0,-2,0,0])
 	A.set_burst('on')
 	A.set_burst_mode('triggered')
 	A.set_burst_n_cycles(2)
@@ -112,14 +112,14 @@ def example():
 	A.force_trigger()
 
 if __name__ == '__main__':
-	# ~ import sys
-	# ~ import logging
+	import sys
+	import logging
 
-	# ~ logging.basicConfig(
-		# ~ stream = sys.stderr,
-		# ~ level = logging.DEBUG,
-		# ~ format = '%(asctime)s|%(levelname)s|%(message)s',
-		# ~ datefmt = '%H:%M:%S',
-	# ~ )
+	logging.basicConfig(
+		stream = sys.stderr,
+		level = logging.DEBUG,
+		format = '%(asctime)s|%(levelname)s|%(message)s',
+		datefmt = '%H:%M:%S',
+	)
 
 	example()
