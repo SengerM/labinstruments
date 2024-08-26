@@ -95,9 +95,8 @@ class SCPISerialInstrument:
 				self.check_whether_error()
 				return
 			except RuntimeError:
-				continue
-			if time() - t_start > timeout:
-				raise RuntimeError('Timeout trying to clear errors buffer. ')
+				if time() - t_start > timeout:
+					raise RuntimeError('Timeout trying to clear errors buffer. ')
 
 	@property
 	def idn(self)->str:
