@@ -1,5 +1,5 @@
 from time import sleep, time
-from Instrument import SCPISerialInstrument
+from .Instrument import SCPISerialInstrument
 
 class Agilent33250A(SCPISerialInstrument):
 
