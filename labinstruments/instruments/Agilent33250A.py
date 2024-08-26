@@ -71,16 +71,24 @@ class Agilent33250A(SCPISerialInstrument):
 		status = 1 if status.lower()=='on' else 0
 		self.write(f'OUTP:TRIG {status}')
 
-	def load_arbitrary_waveform(self, samples:list):
+	def configure_arbitrary_waveform(self, samples_in_volt:list[float]):
+		# Compute normalized samples between -1 and 1:
+		samples = samples_in_volt
+		samples = [(s-min(samples)) for s in samples]
+		samples = [s/max(samples)*2-1 for s in samples]
+		samples = [s/2 for s in samples]
+		self.load_arbitrary_waveform_samples(samples)
+		# Now configure offset and amplitude to obtain the desired voltage levels:
+		self.set_offset(volts=(max(samples_in_volt)+min(samples_in_volt))/2/2)
+		self.set_amplitude(volts_pp=max(samples_in_volt)-min(samples_in_volt))
+		self.set_shape('user') # Select arbitrary waveform source.
+
+	def load_arbitrary_waveform_samples(self, samples:list[float]):
 		self.write_without_checking_errors('DATA VOLATILE, ' + ', '.join([str(_) for _ in samples]))
 		self.write_without_checking_errors('*WAI')
 		self.check_whether_error()
 
 def example():
-	WEIRD_WAVEFORM = [0, .1, 0, .2, 0, .3, 0, .4, 0, .5, 0, .6, 0, .7, 0, .8, 0, .9, 0, 1,.5,.4,.3,.2]
-	POTENTIATION_PULSE = [0,1,0]
-	DEPOTENTIATION_PULSE = [0,-1,0]
-
 	A = Agilent33250A(
 		Serial_kwargs = dict(
 			port = '/dev/ttyUSB1',
@@ -90,23 +98,21 @@ def example():
 		),
 	)
 	print(f'Connected with {A.idn}')
-	# ~ A.reset()
+	A.reset()
 
 	A.set_output('off')
-	A.set_shape('user') # Select arbitrary waveform source.
-	A.set_frequency(1e3)
+
+	A.configure_arbitrary_waveform([0,1,2,3,0,-4])
 	A.set_burst('on')
 	A.set_burst_mode('triggered')
-	A.load_arbitrary_waveform(POTENTIATION_PULSE*333 + DEPOTENTIATION_PULSE*333)
 	A.set_burst_n_cycles(2)
-	A.set_amplitude(volts_pp=2*1.8)
-	A.set_offset(volts=0)
 	A.write('TRIG:SOURCE BUS') # Select trigger source from software.
+	A.set_frequency(1e3)
 	A.set_output('on')
 	A.force_trigger()
 
 if __name__ == '__main__':
-	import sys
+	# ~ import sys
 	# ~ import logging
 
 	# ~ logging.basicConfig(
