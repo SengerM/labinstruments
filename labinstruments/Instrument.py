@@ -3,7 +3,7 @@ from time import sleep, time
 import logging
 
 class SCPISerialInstrument:
-	"""A class to communicate with any laboratory instrument accepting SCPI commands through the serial port."""
+	"""A class to communicate with any laboratory instrument accepting SCPI commands through the serial port. A nice reference of common SCPI commands can be found [here](https://helpfiles.keysight.com/csg/e5055a/Programming/GP-IB_Command_Finder/Common_Commands.htm). Each instrument then implements specific commands. For this, you can subclass this class."""
 	def __init__(self, instrument_manufacturer:str, instrument_model:str, Serial_kwargs:dict, message_termination_instrument_to_PC:str='\n', message_termination_PC_to_instrument:str='\n'):
 		"""
 		Arguments
