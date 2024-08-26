@@ -1,5 +1,5 @@
 from time import sleep, time
-from .Instrument import SCPISerialInstrument
+from labinstruments.Instrument import SCPISerialInstrument
 
 class Keithley2700(SCPISerialInstrument):
 	def set_what_and_range_and_resolution(self, what:str, range:float, resolution:float):

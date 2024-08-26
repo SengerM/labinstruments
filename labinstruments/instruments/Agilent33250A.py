@@ -1,12 +1,9 @@
 from time import sleep, time
-from .Instrument import SCPISerialInstrument
+from labinstruments.Instrument import SCPISerialInstrument
 
 class Agilent33250A(SCPISerialInstrument):
-
-	def check_whether_error(self):
-		msg = self.query_without_checking_errors('SYST:ERR?')
-		if msg != '+0,"No error"':
-			raise RuntimeError(f'The instrument says: {msg}')
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, instrument_manufacturer='Agilent', instrument_model='33250A', **kwargs)
 
 	def set_shape(self, shape:str):
 		self.write(f'FUNC {shape.upper()}')
