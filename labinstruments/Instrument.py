@@ -109,7 +109,7 @@ class SCPISerialInstrument:
 			self._idn = self.query('*IDN?')
 		return self._idn
 
-	def reset(self):
+	def reset(self, sleep_time:float=2):
 		"""Reset the instrument."""
 		self.write_without_checking_errors('*RST')
-		sleep(2) # Give it a bit of time to reset.
+		sleep(sleep_time) # Give it a bit of time to reset.
