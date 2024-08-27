@@ -5,7 +5,7 @@ import logging
 class SCPISerialInstrument:
 	"""A class to communicate with any laboratory instrument accepting SCPI commands through the serial port. A nice reference of common SCPI commands can be found [here](https://helpfiles.keysight.com/csg/e5055a/Programming/GP-IB_Command_Finder/Common_Commands.htm). Each instrument then implements specific commands. For this, you can subclass this class.
 	"""
-	def __init__(self, Serial_kwargs:dict, message_termination_instrument_to_PC:str='\n', message_termination_PC_to_instrument:str='\n', instrument_manufacturer:str=None, instrument_model:str=None, instrument_serial_number:str=None):
+	def __init__(self, Serial_kwargs:dict, message_termination_instrument_to_PC:str='\n', message_termination_PC_to_instrument:str='\n', instrument_manufacturer:str=None, instrument_model:str=None, instrument_serial_number:str=None, clear_status_upon_connection:bool=True, reset_upon_connection:bool=True):
 		"""
 		Arguments
 		---------
@@ -21,11 +21,18 @@ class SCPISerialInstrument:
 			The model of the manufacturer of the instrument. Once the connection with the instrument is established, this will be used to check that the instrument is the one supposed to be.
 		instrument_serial_number: str, optional
 			The serial number of the instrument. Once the connection with the instrument is established, this will be used to check that the instrument is the one supposed to be.
+		clear_status_upon_connection: bool
+			If `True`, the SCPI '*CLS' command will be sent to the instrument upon connection. This is useful to clear the error messages and other status registers.
+		reset_upon_connection: bool
+			If `True`, the instrument will be reset upon connection. Useful to start always with the same conditions.
 		"""
 		self._message_termination_instrument_to_PC = message_termination_instrument_to_PC
 		self._message_termination_PC_to_instrument = message_termination_PC_to_instrument
 
 		self.serial_port = serial.Serial(**Serial_kwargs) # Open serial connection.
+
+		if clear_status_upon_connection:
+			self.clear_status()
 
 		# Check that we are connected with the correct instrument:
 		if instrument_manufacturer is not None:
@@ -37,6 +44,9 @@ class SCPISerialInstrument:
 		if instrument_serial_number is not None:
 			if instrument_serial_number.lower() not in self.idn.lower():
 				raise RuntimeError(f'Not connected with an instrument with serial number {instrument_serial_number}, I am connected with {self.idn}. ')
+
+		if reset_upon_connection:
+			self.reset()
 
 	def write_without_checking_errors(self, cmd:str)->None:
 		"""Send a message to the instrument.
