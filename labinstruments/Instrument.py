@@ -27,8 +27,6 @@ class SCPISerialInstrument:
 
 		self.serial_port = serial.Serial(**Serial_kwargs) # Open serial connection.
 
-		self.clear_errors_buffer()
-
 		# Check that we are connected with the correct instrument:
 		if instrument_manufacturer is not None:
 			if instrument_manufacturer.lower() not in self.idn.lower():
@@ -94,32 +92,14 @@ class SCPISerialInstrument:
 		return response
 
 	def check_whether_error(self)->None:
-		"""Check whether there was an error to be reported from the instrument. If so, this function raises `RuntimeError` and prints the message of the error received from the instrument."""
+		"""Check whether there was an error to be reported from the instrument. If so, raises `RuntimeError` with the message reported by the instrument."""
 		msg = self.query_without_checking_errors('SYST:ERR?')
 		if '"No error"'.lower() not in msg.lower():
 			raise RuntimeError(f'The instrument says: {msg}')
 
-	def clear_errors_buffer(self, timeout:float=1)->None:
-		"""Clear the errors buffer in the instrument. Error messages in the buffer, if any, are simply deleted.
-
-		Arguments
-		---------
-		timeout: float = 1
-			A timeout for clearing the buffer, in seconds.
-		"""
-		self.clear_status()
-		# ~ t_start = time()
-		# ~ while True:
-			# ~ try:
-				# ~ self.check_whether_error()
-				# ~ return
-			# ~ except RuntimeError:
-				# ~ if time() - t_start > timeout:
-					# ~ raise RuntimeError('Timeout trying to clear errors buffer. ')
-
 	@property
 	def idn(self)->str:
-		"""Ask the instrument who he is. Expected response is a string containing the name, manufacturer, serial number, etc."""
+		"""Ask the instrument who he/she/it is. Expected response is a string containing the name, manufacturer, serial number, etc."""
 		if not hasattr(self, '_idn'):
 			self._idn = self.query('*IDN?')
 		return self._idn
