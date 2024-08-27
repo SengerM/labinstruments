@@ -6,6 +6,7 @@ class Agilent33250A(SCPISerialInstrument):
 		super().__init__(*args, instrument_manufacturer='Agilent', instrument_model='33250A', **kwargs)
 
 	def apply(self, function:str, frequency:float, volt_pp:float, volt_offset:float):
+		"""Send the `APPLY` command to the instrument. For details, see [page 144 of the user manual](https://www.keysight.com/se/en/assets/9018-03925/user-manuals/9018-03925.pdf?success=true)."""
 		self.write('VOLT:UNIT VPP') # Make sure it will be volts peak to peak.
 		self.write(f'APPLY:{function} {frequency:e}, {volt_pp:e}, {volt_offset:e}')
 
