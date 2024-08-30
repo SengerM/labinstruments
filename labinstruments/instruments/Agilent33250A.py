@@ -28,9 +28,10 @@ class Agilent33250A(SCPISerialInstrument):
 	def set_burst_n_cycles(self, n:int):
 		self.write(f'BURS:NCYC {int(n)}')
 
-	def force_trigger(self):
+	def force_trigger(self, block_execution_timeout:float=None):
 		self.write('*TRG')
-		self.write('*WAI')
+		if block_execution_timeout is not None:
+			self.wait_until_all_comands_have_been_executed(timeout=block_execution_timeout)
 
 	def output_triggered(self, status:str):
 		if status.lower() not in {'on','off'}:
@@ -68,17 +69,19 @@ def example():
 		),
 	)
 	print(f'Connected with {A.idn}')
-	A.reset()
 
 	A.set_output('off')
 
-	A.configure_arbitrary_waveform([0,3,0,-2,0,0], frequency=1e6)
+	A.configure_arbitrary_waveform([0,3,0,-2,0,0]*33, frequency=100e3)
 	A.set_burst('on')
 	A.set_burst_mode('triggered')
-	A.set_burst_n_cycles(2222)
+	A.write('BURSt:INTernal:PERiod 111') # I don't fully understand why we need this, but without this it does not let you to put many burst cycles...
+	A.set_burst_n_cycles(1e5)
 	A.write('TRIG:SOURCE BUS') # Select trigger source from software.
 	A.set_output('on')
+	print('Forcing trigger...')
 	A.force_trigger()
+	print('Done!')
 
 if __name__ == '__main__':
 	import sys
