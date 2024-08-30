@@ -126,3 +126,23 @@ class SCPISerialInstrument:
 	def wait(self)->None:
 		"""Prohibits the instrument from executing any new commands until all pending overlapped commands have been completed."""
 		self.write('*WAI')
+
+	def wait_until_all_comands_have_been_executed(self, timeout:float=None):
+		"""Block the execution until the instrument is free to receive new commands.
+
+		Arguments
+		---------
+		timeout: float
+			Timeout in seconds for waiting. If `None`, the execution is blocked forever until the insturment is free again.
+		"""
+		self.write_without_checking_errors('*WAI') # Tell it to wait until it is done with all commands before taking new ones.
+		self.write_without_checking_errors('*IDN?') # Ask for the IDN.
+		start = time()
+		while True:
+			response = self.read_without_checking_errors() # Keep waiting for the response to "*IDN?", when we get it, it mens the instrument is done with all that was before we sent the "*WAI" command just before.
+			if response == self.idn:
+				break
+			elif timeout is not None and time()-start > timeout:
+				raise RuntimeError('Timeout waiting for execution.')
+			else:
+				continue
