@@ -105,7 +105,7 @@ class SCPISerialInstrument:
 		"""Check whether there was an error to be reported from the instrument. If so, raises `RuntimeError` with the message reported by the instrument."""
 		msg = self.query_without_checking_errors('SYST:ERR?')
 		if '"No error"'.lower() not in msg.lower():
-			raise RuntimeError(f'The instrument says: {msg}')
+			raise RuntimeError(f'The instrument says: {repr(msg)}')
 
 	@property
 	def idn(self)->str:
