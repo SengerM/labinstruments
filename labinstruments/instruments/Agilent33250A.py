@@ -55,6 +55,8 @@ class Agilent33250A(SCPISerialInstrument):
 		)
 
 	def load_arbitrary_waveform_samples(self, samples:list[float]):
+		if len(samples) > 64000:
+			raise ValueError(f'Received {len(samples)} to load to the instrument, which has a 64 kSamples memory. They won\'t fit. ')
 		self.write_without_checking_errors('DATA VOLATILE, ' + ', '.join([str(_) for _ in samples]))
 		self.write_without_checking_errors('*WAI')
 		self.check_whether_error()
