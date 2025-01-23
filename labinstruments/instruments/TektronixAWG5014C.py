@@ -87,6 +87,14 @@ class TektronixAWG5014C(SCPIInstrument):
 
 		self.check_whether_error()
 
+	def set_waveform_into_sequence(
+		self,
+		n_element_within_sequence:int,
+		n_channel:int,
+		waveform_name:str,
+	):
+		self.write(f'SEQuence:ELEMent{n_element_within_sequence}:WAVeform{n_channel} "{waveform_name}"')
+
 def example():
 	awg = TektronixAWG5014C(
 		ip_address = '192.168.0.69',
@@ -95,12 +103,31 @@ def example():
 	awg.clear_errors_buffer()
 	print(awg.idn)
 	awg.load_arbitrary_waveform_samples(
-		name = 'deleteme',
-		samples = [0,1,0,1,-1,.25,0,1],
-		markers_1 = [1,0,0,0,0,0,0,0],
-		markers_2 = [0,0,0,0,1,0,0,1],
+		name = 'write_pot',
+		samples =   [0,1,0],
+		markers_1 = [0,0,0],
+		markers_2 = [0,0,0],
 		override = True,
 	)
+	awg.load_arbitrary_waveform_samples(
+		name = 'write_dep',
+		samples =   [0,-1,0],
+		markers_1 = [0, 0,0],
+		markers_2 = [0, 0,0],
+		override = True,
+	)
+	awg.load_arbitrary_waveform_samples(
+		name = 'read',
+		samples =   [0] + [.5]*10 + [0],
+		markers_1 = [0,1] + [0]*(10),
+		markers_2 = [0]*(10+2),
+		override = True,
+	)
+	awg.set_waveform_into_sequence(1,1,'read')
+	awg.set_waveform_into_sequence(2,1,'write_dep')
+	awg.set_waveform_into_sequence(3,1,'write_pot')
+	awg.set_waveform_into_sequence(4,1,'read')
+	awg.set_output(1, 'on')
 
 if __name__ == '__main__':
 	import sys
