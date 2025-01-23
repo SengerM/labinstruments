@@ -1,5 +1,7 @@
 from labinstruments.Instrument import SCPIInstrument
 import socket
+import logging
+logger = logging.getLogger(__name__)
 
 class TektronixAWG5014C(SCPIInstrument):
 	def __init__(self, ip_address:str, port:int, timeout_seconds=1):
@@ -10,6 +12,7 @@ class TektronixAWG5014C(SCPIInstrument):
 
 	def write_without_checking_errors(self, cmd:str)->None:
 		"""This method has to be implemented by the inheriting classes."""
+		logger.debug(f'Sending command: {cmd}')
 		self.socket.sendall(bytes(cmd + '\n', 'UTF-8'))
 
 	def read_without_checking_errors(self)->str:
@@ -24,6 +27,7 @@ class TektronixAWG5014C(SCPIInstrument):
 				break
 		received = received[1:]
 		received = received.rstrip(MESSAGE_ENDS_WITH)
+		logger.debug(f'Received: {received}')
 		return received
 
 def example():
