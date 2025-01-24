@@ -43,7 +43,8 @@ class TektronixAWG5014C(SCPIInstrument):
 	def delete_waveform(self, name:str):
 		self.write(f'WLISt:WAVeform:DELete "{name}"') # Delete any waveform that is already using the same name.
 
-	def load_arbitrary_waveform_samples(self,
+	def send_arbitrary_waveform(
+		self,
 		name:str, # The name of the waveform.
 		samples:list, # A list of `float` or `int` with the samples of the waveform.
 		markers_1:list, # A list with the markers 1.
@@ -87,47 +88,143 @@ class TektronixAWG5014C(SCPIInstrument):
 
 		self.check_whether_error()
 
-	def set_waveform_into_sequence(
+	def set_run_mode(self, mode:str):
+		RUN_MODES = {'continuous','triggered','gated','sequence'}
+		if not isinstance(mode,str) or mode.lower() not in RUN_MODES:
+			raise ValueError(f'`mode` must be one of {RUN_MODES}, received {repr(mode)}. ')
+		self.write(f'AWGControl:RMODe {mode}')
+
+	def set_waveform_into_main_sequence(
 		self,
-		n_element_within_sequence:int,
-		n_channel:int,
-		waveform_name:str,
+		n_element_within_sequence:int, # Value of the `Index No` in which to set the waveform.
+		n_channel:int, # Channel number.
+		waveform_name:str, # Name of an existing waveform to be set into the sequence.
 	):
 		self.write(f'SEQuence:ELEMent{n_element_within_sequence}:WAVeform{n_channel} "{waveform_name}"')
 
-def example():
+	def clear_main_sequence(self):
+		# Clear the main sequence, i.e. the list of waveforms when the "run mode" is "sequence".
+		self.write('SEQuence:LENGth 0')
+
+	def append_waveforms_into_main_sequence(
+		self,
+		waveforms:dict, # A dictionary of the form `{n_channel: wf_name}` containing the information of the new row to be added into the main sequence table.
+	):
+		sequence_length = int(self.query('SEQuence:LENGth?'))
+		self.write(f'SEQuence:LENGth {sequence_length + 1}') # Add one slot for the new waveform.
+		for n_channel,wf_name in waveforms.items():
+			self.set_waveform_into_main_sequence(
+				n_element_within_sequence = sequence_length+1,
+				n_channel = n_channel,
+				waveform_name = wf_name,
+			)
+
+	def set_main_sequence(
+		self,
+		sequence:list, # A list of dict where each dict is one row of the "main sequence table", being each dict of the form `{n_channel: wf_name}`.
+	):
+		self.clear_main_sequence()
+		self.write(f'SEQuence:LENGth {len(sequence)}') # Add one slot for the new waveform.
+		for n_row,row in enumerate(sequence):
+			for n_channel,wf_name in row.items():
+				self.set_waveform_into_main_sequence(
+					n_element_within_sequence = n_row+1,
+					n_channel = n_channel,
+					waveform_name = wf_name,
+				)
+
+	def set_output_waveform(self, n_channel:int, waveform_name:str):
+		self.write(f'SOURce{n_channel}:WAVeform "{waveform_name}"')
+
+	def set_sampling_rate(self, sampling_rate:float):
+		self.write(f'SOURCE1:FREQUENCY {sampling_rate}')
+
+	def run(self):
+		# Equivalent to pressing the "Run" button on the front pannel of the AWG.
+		self.write('AWGControl:RUN')
+
+	def stop(self):
+		self.write('AWGControl:STOP')
+
+def example_sequence():
 	awg = TektronixAWG5014C(
 		ip_address = '192.168.0.69',
 		port = 1111,
 	)
 	awg.clear_errors_buffer()
 	print(awg.idn)
-	awg.load_arbitrary_waveform_samples(
+
+	awg.send_arbitrary_waveform(
 		name = 'write_pot',
 		samples =   [0,1,0],
 		markers_1 = [0,0,0],
 		markers_2 = [0,0,0],
 		override = True,
 	)
-	awg.load_arbitrary_waveform_samples(
+	awg.send_arbitrary_waveform(
 		name = 'write_dep',
 		samples =   [0,-1,0],
 		markers_1 = [0, 0,0],
 		markers_2 = [0, 0,0],
 		override = True,
 	)
-	awg.load_arbitrary_waveform_samples(
+	awg.send_arbitrary_waveform(
 		name = 'read',
 		samples =   [0] + [.5]*10 + [0],
 		markers_1 = [0,1] + [0]*(10),
 		markers_2 = [0]*(10+2),
 		override = True,
 	)
-	awg.set_waveform_into_sequence(1,1,'read')
-	awg.set_waveform_into_sequence(2,1,'write_dep')
-	awg.set_waveform_into_sequence(3,1,'write_pot')
-	awg.set_waveform_into_sequence(4,1,'read')
-	awg.set_output(1, 'on')
+	awg.send_arbitrary_waveform(
+		name = 'write_null',
+		samples =   [0,0,0],
+		markers_1 = [0,0,0],
+		markers_2 = [0,0,0],
+		override = True,
+	)
+	awg.send_arbitrary_waveform(
+		name = 'read_null',
+		samples =   [0] + [0]*10 + [0],
+		markers_1 = [0,1] + [0]*(10),
+		markers_2 = [0]*(10+2),
+		override = True,
+	)
+	awg.set_run_mode('sequence')
+	awg.clear_main_sequence()
+	awg.append_waveforms_into_main_sequence({1:'read', 2:'read'})
+	for potdep in ['pot','dep']:
+		for k in range(2):
+			awg.append_waveforms_into_main_sequence({1:f'write_{potdep}', 2:f'write_{potdep}'})
+			awg.append_waveforms_into_main_sequence({1:'read', 2:'read'})
+	for n_channel in {1,2}:
+		awg.set_output(n_channel, 'on')
+	awg.set_sampling_rate(100e-9**-1)
+	awg.run()
+
+def example_continuous_run():
+	awg = TektronixAWG5014C(
+		ip_address = '192.168.0.69',
+		port = 1111,
+	)
+	awg.clear_errors_buffer()
+	print(awg.idn)
+
+	potwf = [0,1,0]
+	depwf = [0,-1,0]
+	readwf = [0] + [.5]*33 + [0]
+	wholewf = readwf + (potwf + readwf)*999 + (depwf + readwf)*999
+	awg.send_arbitrary_waveform(
+		name = 'whole_waveform',
+		samples =  wholewf,
+		markers_1 = [0]*len(wholewf),
+		markers_2 = [0]*len(wholewf),
+		override = True,
+	)
+	awg.set_run_mode('continuous')
+	awg.set_sampling_rate(100e-9**-1)
+	awg.set_output_waveform(1,'whole_waveform')
+	awg.set_output(1,'on')
+	awg.run()
 
 if __name__ == '__main__':
 	import sys
@@ -140,4 +237,4 @@ if __name__ == '__main__':
 		# ~ datefmt = '%H:%M:%S',
 	# ~ )
 
-	example()
+	example_continuous_run()
