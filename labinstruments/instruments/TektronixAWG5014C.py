@@ -149,6 +149,12 @@ class TektronixAWG5014C(SCPIInstrument):
 	def force_trigger(self):
 		self.write('*TRG')
 
+	def __enter__(self):
+		self.run()
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		self.stop()
+
 def example_sequence():
 	awg = TektronixAWG5014C(
 		ip_address = '192.168.0.69',
@@ -231,11 +237,10 @@ def example_triggered_run():
 	awg.set_sampling_rate(100e-9**-1)
 	awg.set_output_waveform(1,'whole_waveform')
 	awg.set_output(1,'on')
-	awg.run()
 
-	for k in range(3):
-		awg.force_trigger()
-		# ~ awg.wait()
+	with awg:
+		for k in range(3):
+			awg.force_trigger()
 
 if __name__ == '__main__':
 	import sys
