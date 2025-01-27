@@ -146,6 +146,9 @@ class TektronixAWG5014C(SCPIInstrument):
 	def stop(self):
 		self.write('AWGControl:STOP')
 
+	def force_trigger(self):
+		self.write('*TRG')
+
 def example_sequence():
 	awg = TektronixAWG5014C(
 		ip_address = '192.168.0.69',
@@ -201,7 +204,7 @@ def example_sequence():
 	awg.set_sampling_rate(100e-9**-1)
 	awg.run()
 
-def example_continuous_run():
+def example_triggered_run():
 	awg = TektronixAWG5014C(
 		ip_address = '192.168.0.69',
 		port = 1111,
@@ -209,22 +212,30 @@ def example_continuous_run():
 	awg.clear_errors_buffer()
 	print(awg.idn)
 
+	N_POT = 3
+	N_DEP = 9
 	potwf = [0,1,0]
 	depwf = [0,-1,0]
 	readwf = [0] + [.5]*33 + [0]
-	wholewf = readwf + (potwf + readwf)*999 + (depwf + readwf)*999
+	read_mrkr = [0] + [1]*int(len(readwf)/2-1) + [0]*(len(readwf)-int(len(readwf)/2))
+	wholewf = readwf + (potwf + readwf)*N_POT + (depwf + readwf)*N_DEP
+	whole_mrkr = read_mrkr + ([0]*len(potwf) + read_mrkr)*N_POT + ([0]*len(depwf) + read_mrkr)*N_DEP
 	awg.send_arbitrary_waveform(
 		name = 'whole_waveform',
 		samples =  wholewf,
-		markers_1 = [0]*len(wholewf),
+		markers_1 = whole_mrkr,
 		markers_2 = [0]*len(wholewf),
 		override = True,
 	)
-	awg.set_run_mode('continuous')
+	awg.set_run_mode('triggered')
 	awg.set_sampling_rate(100e-9**-1)
 	awg.set_output_waveform(1,'whole_waveform')
 	awg.set_output(1,'on')
 	awg.run()
+
+	for k in range(3):
+		awg.force_trigger()
+		# ~ awg.wait()
 
 if __name__ == '__main__':
 	import sys
@@ -237,4 +248,4 @@ if __name__ == '__main__':
 		# ~ datefmt = '%H:%M:%S',
 	# ~ )
 
-	example_continuous_run()
+	example_triggered_run()
