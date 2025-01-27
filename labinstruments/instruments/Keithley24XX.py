@@ -1,9 +1,9 @@
 from time import sleep, time
 from labinstruments.Instrument import SCPISerialInstrument
 
-class Keithley2420(SCPISerialInstrument):
+class Keithley24XX(SCPISerialInstrument):
 	def __init__(self, *args, **kwargs):
-		super().__init__(*args, instrument_manufacturer='Keithley', instrument_model='2420', **kwargs)
+		super().__init__(*args, instrument_manufacturer='Keithley', instrument_model='MODEL 24', **kwargs)
 
 	def set_output(self, state:str):
 		if state.lower() not in {'on','off'}:
