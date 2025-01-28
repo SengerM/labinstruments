@@ -52,7 +52,7 @@ class TektronixAWG5014C(SCPIInstrument):
 		override:bool=False # If `True`, any waveform that is already in the memory of the AWG with the same name will be deleted before loading this new waveform.
 	):
 		if not len(markers_1) == len(markers_2) == len(samples):
-			raise ValueError(f'`markers_1`, `markers_2` and `samples` must have the same length. ')
+			raise ValueError(f'`markers_1`, `markers_2` and `samples` must have the same length, but the lengths are `len(samples)`={len(samples)}, `len(markers_1)`={len(markers_1)} and `len(markers_2)`={len(markers_2)}. ')
 
 		if min(samples) < -1 or max(samples) > 1:
 			raise TypeError('`samples` can only contain values between -1 and 1 (inclusive). ')
