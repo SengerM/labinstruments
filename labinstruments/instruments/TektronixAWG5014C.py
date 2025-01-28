@@ -149,11 +149,18 @@ class TektronixAWG5014C(SCPIInstrument):
 	def force_trigger(self):
 		self.write('*TRG')
 
+	def enable_outputs(self, outputs_to_enable:list):
+		for n_output in outputs_to_enable:
+			self.set_output(n_output, 'on')
+		return self
+
 	def __enter__(self):
 		self.run()
 
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		self.stop()
+		for n_channel in [1,2,3,4]:
+			self.set_output(n_channel, 'off')
 
 def example_sequence():
 	awg = TektronixAWG5014C(
@@ -239,10 +246,10 @@ def example_triggered_run():
 	awg.set_run_mode('triggered')
 	awg.set_sampling_rate(SAMPLING_PERIOD**-1)
 	awg.set_output_waveform(1,'whole_waveform')
-	awg.set_output(1,'on')
 
-	with awg:
+	with awg.enable_outputs([1]):
 		for k in range(3):
+			input('Press enter to trigger')
 			awg.force_trigger()
 
 if __name__ == '__main__':
