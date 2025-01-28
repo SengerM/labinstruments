@@ -220,9 +220,12 @@ def example_triggered_run():
 
 	N_POT = 3
 	N_DEP = 9
-	potwf = [0,1,0]
-	depwf = [0,-1,0]
-	readwf = [0] + [.5]*33 + [0]
+	T_WRITE = 1e-6
+	T_READ = 100e-6
+	SAMPLING_PERIOD = 100e-9
+	potwf = [0] + [1]*int(T_WRITE/SAMPLING_PERIOD) + [0]
+	depwf = [0] + [-1]*int(T_WRITE/SAMPLING_PERIOD) + [0]
+	readwf = [0] + [.5]*int(T_READ/SAMPLING_PERIOD) + [0]
 	read_mrkr = [0] + [1]*int(len(readwf)/2-1) + [0]*(len(readwf)-int(len(readwf)/2))
 	wholewf = readwf + (potwf + readwf)*N_POT + (depwf + readwf)*N_DEP
 	whole_mrkr = read_mrkr + ([0]*len(potwf) + read_mrkr)*N_POT + ([0]*len(depwf) + read_mrkr)*N_DEP
@@ -234,7 +237,7 @@ def example_triggered_run():
 		override = True,
 	)
 	awg.set_run_mode('triggered')
-	awg.set_sampling_rate(100e-9**-1)
+	awg.set_sampling_rate(SAMPLING_PERIOD**-1)
 	awg.set_output_waveform(1,'whole_waveform')
 	awg.set_output(1,'on')
 
