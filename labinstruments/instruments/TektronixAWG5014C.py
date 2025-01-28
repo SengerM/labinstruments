@@ -40,6 +40,9 @@ class TektronixAWG5014C(SCPIInstrument):
 		"""Set the output of the channel `n_channel` to `'on'` or `'off'`."""
 		self.write(f'OUTPUT{n_channel} {status}')
 
+	def set_amplitude_of_channel_waveform(self, n_channel:int, amplitude:float):
+		self.write(f'SOURce{n_channel}:VOLTage:AMPLITUDE {amplitude}')
+
 	def delete_waveform(self, name:str):
 		self.write(f'WLISt:WAVeform:DELete "{name}"') # Delete any waveform that is already using the same name.
 
