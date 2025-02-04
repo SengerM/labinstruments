@@ -139,6 +139,9 @@ class TektronixAWG5014C(SCPIInstrument):
 	def set_output_waveform(self, n_channel:int, waveform_name:str):
 		self.write(f'SOURce{n_channel}:WAVeform "{waveform_name}"')
 
+	def delete_all_waveforms(self):
+		self.write('WLISt:WAVeform:DELete all')
+
 	def set_sampling_rate(self, sampling_rate:float):
 		self.write(f'SOURCE1:FREQUENCY {sampling_rate}')
 
