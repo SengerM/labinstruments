@@ -4,6 +4,14 @@ from time import sleep, time
 class SCPIInstrument:
 	"""A class to communicate with any laboratory instrument accepting SCPI commands. A nice reference of common SCPI commands can be found [here](https://helpfiles.keysight.com/csg/e5055a/Programming/GP-IB_Command_Finder/Common_Commands.htm). Each instrument then implements specific commands. For this, you can subclass this class.
 	"""
+	@property
+	def communication_react_time(self):
+		return self._communication_react_time if hasattr(self, '_communication_react_time') else 0
+
+	@communication_react_time.setter
+	def communication_react_time(self, seconds:float):
+		self._communication_react_time = float(seconds)
+
 	def write_without_checking_errors(self, cmd:str)->None:
 		"""This method has to be implemented by the inheriting classes."""
 		raise NotImplementedError("This method has to be implemented by the inheriting classes.")
@@ -21,23 +29,28 @@ class SCPIInstrument:
 			The command to be sent to the instrument.
 		"""
 		self.write_without_checking_errors(cmd)
+		sleep(self.communication_react_time)
 		return self.read_without_checking_errors()
 
 	def write(self, cmd:str)->None:
 		"""Send a message to the instrument and check that there were no errors reported by the instrument. To send a message without checking for errors use `write_without_checking_errors`."""
 		self.write_without_checking_errors(cmd)
+		sleep(self.communication_react_time)
 		self.check_whether_error()
 
 	def read(self)->str:
 		"""Read the response of the instrument to the last command and check whether there was an error. To read without error checking, use `read_without_checking_errors`."""
 		response = self.read_without_checking_errors()
+		sleep(self.communication_react_time)
 		self.check_whether_error()
 		return response
 
 	def query(self, cmd:str)->str:
 		"""Write and read the response of the instrument, and check whether there was any error in the process. To query without error checking, use `query_without_checking_errors`."""
 		self.write_without_checking_errors(cmd)
+		sleep(self.communication_react_time)
 		response = self.read_without_checking_errors()
+		sleep(self.communication_react_time)
 		self.check_whether_error()
 		return response
 
