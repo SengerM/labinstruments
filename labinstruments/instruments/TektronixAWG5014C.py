@@ -15,7 +15,7 @@ class TektronixAWG5014C(SCPIInstrument):
 		self.socket.connect((ip_address, port))
 		self.socket.settimeout(timeout_seconds)
 		self.filelike_socket = self.socket.makefile(mode='rw', encoding='UTF-8', newline='\n')
-		self.communication_react_time = .01 # This value was found empirically.
+		self.communication_react_time = .05 # This value was found empirically.
 
 	def write_without_checking_errors(self, cmd:str)->None:
 		"""This method has to be implemented by the inheriting classes."""
