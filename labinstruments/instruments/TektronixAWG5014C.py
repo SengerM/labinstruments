@@ -166,8 +166,6 @@ class TektronixAWG5014C(SCPIInstrument):
 
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		self.stop()
-		for n_channel in [1,2,3,4]:
-			self.set_output(n_channel, 'off')
 
 def example_sequence():
 	awg = TektronixAWG5014C(
@@ -232,30 +230,20 @@ def example_triggered_run():
 	awg.clear_errors_buffer()
 	print(awg.idn)
 
-	N_POT = 3
-	N_DEP = 9
-	T_WRITE = 1e-6
-	T_READ = 100e-6
-	SAMPLING_PERIOD = 100e-9
-	potwf = [0] + [1]*int(T_WRITE/SAMPLING_PERIOD) + [0]
-	depwf = [0] + [-1]*int(T_WRITE/SAMPLING_PERIOD) + [0]
-	readwf = [0] + [.5]*int(T_READ/SAMPLING_PERIOD) + [0]
-	read_mrkr = [0] + [1]*int(len(readwf)/2-1) + [0]*(len(readwf)-int(len(readwf)/2))
-	wholewf = readwf + (potwf + readwf)*N_POT + (depwf + readwf)*N_DEP
-	whole_mrkr = read_mrkr + ([0]*len(potwf) + read_mrkr)*N_POT + ([0]*len(depwf) + read_mrkr)*N_DEP
+	wf_samples = numpy.linspace(0,1,999999)
 	awg.send_arbitrary_waveform(
-		name = 'whole_waveform',
-		samples =  wholewf,
-		markers_1 = whole_mrkr,
-		markers_2 = [0]*len(wholewf),
+		name = 'long_ramp',
+		samples =  wf_samples,
+		markers_1 = wf_samples*0,
+		markers_2 = wf_samples*0,
 		override = True,
 	)
 	awg.set_run_mode('triggered')
-	awg.set_sampling_rate(SAMPLING_PERIOD**-1)
-	awg.set_output_waveform(1,'whole_waveform')
+	awg.set_sampling_rate(100e-9**-1)
+	awg.set_output_waveform(1,'long_ramp')
 
 	with awg.enable_outputs([1]):
-		for k in range(3):
+		while True:
 			input('Press enter to trigger')
 			awg.force_trigger()
 
