@@ -10,12 +10,19 @@ import array as arr
 logger = logging.getLogger(__name__)
 
 class TektronixAWG5014C(SCPIInstrument):
-	def __init__(self, ip_address:str, port:int, timeout_seconds=1):
+	def __init__(
+		self,
+		ip_address:str,
+		port:int,
+		timeout_seconds=1,
+		communication_react_time:float=.05,
+			# Time to wait before reading a response from the instrument after a command was sent, in seconds. The reaction time of this AWG was found to be quite large, especially after it has been running long tests.
+	):
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.socket.connect((ip_address, port))
 		self.socket.settimeout(timeout_seconds)
 		self.filelike_socket = self.socket.makefile(mode='rw', encoding='UTF-8', newline='\n')
-		self.communication_react_time = .05 # This value was found empirically.
+		self.communication_react_time = communication_react_time
 
 	def write_without_checking_errors(self, cmd:str)->None:
 		"""This method has to be implemented by the inheriting classes."""
